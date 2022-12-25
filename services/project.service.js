@@ -27,12 +27,10 @@ export async function createProject(data) {
         throw new Error('Project limit reached');
     }
     // create project
-    const project = await Project.create([
-        {
-            orgId,
-            name,
-        },
-    ]);
+    const project = await Project.create({
+        orgId,
+        name,
+    });
     // create default environments
     const envs = await Environment.create([
         {
