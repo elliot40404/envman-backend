@@ -10,7 +10,7 @@ export const schema = new Schema(
     {
         adminId: {
             type: Schema.Types.ObjectId,
-            ref: 'users',
+            ref: 'User',
             required: true,
             unique: true,
             index: true,

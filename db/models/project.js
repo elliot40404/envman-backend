@@ -4,7 +4,7 @@ export const schema = new Schema(
     {
         orgId: {
             type: Schema.Types.ObjectId,
-            ref: 'organizations',
+            ref: 'Organization',
             required: true,
             index: true,
         },
@@ -12,8 +12,22 @@ export const schema = new Schema(
             type: String,
             required: true,
         },
-        environments: {
+        projectAdmins: {
             type: [Schema.Types.ObjectId],
+            ref: 'User',
+            index: true,
+            default: [],
+        },
+        projectUsers: {
+            type: [Schema.Types.ObjectId],
+            ref: 'User',
+            index: true,
+            default: [],
+        },
+        projectViewers: {
+            type: [Schema.Types.ObjectId],
+            ref: 'User',
+            index: true,
             default: [],
         },
     },

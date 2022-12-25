@@ -9,7 +9,7 @@ export const schema = new Schema(
         },
         orgId: {
             type: Schema.Types.ObjectId,
-            ref: 'organizations',
+            ref: 'Organization',
             index: true,
         },
         name: {
@@ -24,27 +24,12 @@ export const schema = new Schema(
             type: Boolean,
             default: false,
         },
-        projects: [
-            {
-                projectId: Schema.Types.ObjectId,
-                isProjectAdmin: {
-                    type: Boolean,
-                    default: false,
-                },
-                isProjectEditor: {
-                    type: Boolean,
-                    default: false,
-                },
-                isProjectViewer: {
-                    type: Boolean,
-                    default: false,
-                },
-                environments: {
-                    type: [Schema.Types.ObjectId],
-                    default: [],
-                },
-            },
-        ],
+        projects: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Project',
+            index: true,
+            default: [],
+        },
     },
     {
         collection: 'users',

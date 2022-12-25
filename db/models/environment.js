@@ -11,13 +11,13 @@ export const schema = new Schema(
     {
         orgId: {
             type: Schema.Types.ObjectId,
-            ref: 'organizations',
+            ref: 'Organization',
             required: true,
             index: true,
         },
         projectId: {
             type: Schema.Types.ObjectId,
-            ref: 'projects',
+            ref: 'Project',
             required: true,
             index: true,
         },
