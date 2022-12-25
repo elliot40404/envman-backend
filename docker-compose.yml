@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+    app:
+        build: .
+        restart: unless-stopped
+        depends_on:
+            - db
+        environment:
+            - NODE_ENV=production
+            - MONGO_URL=mongodb://db:27017/envman
+            - API_PORT=${API_PORT}
+            - API_URL=${API_URL}
+            - API_TOKEN=${API_TOKEN}
+            - CORS_ORIGIN=${CORS_ORIGIN}
+        volumes:
+            - ./logs:/var/log
+    db:
+        image: mongo
+        # image: mongo:6.0.0
+        restart: unless-stopped
+        container_name: db
+        ports:
+            - 27018:27017
+        volumes:
+            - onboarding-db-data:/data/db
+    nginx:
+        image: nginx
+        restart: unless-stopped
+        container_name: nginx-proxy
+        ports:
+            - 4000:4000
+        volumes:
+            - ./conf.d:/etc/nginx/conf.d
+        depends_on:
+            - app
+volumes:
+    envman-db-data:
