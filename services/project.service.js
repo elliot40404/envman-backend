@@ -1,4 +1,4 @@
-import { Organization, User, Project, Environment, db } from '../db/db.js';
+import { Organization, User, Project, Environment } from '../db/db.js';
 import { ENVIRONMENTS } from '../db/models/environment.js';
 import 'dotenv/config';
 
@@ -15,92 +15,69 @@ const MAX_PROJECTS = process.env.MAX_PROJECTS
  * @throws {Error} - If either of data is invalid
  */
 export async function createProject(data) {
-    const session = await db.startSession();
-    try {
-        session.startTransaction();
-        const { orgId, name } = data;
-        // check if organization exists
-        const organization = await Organization.findOne({
-            _id: orgId,
-        });
-        if (!organization) {
-            throw new Error('Organization not found');
-        }
-        if (organization.projects >= MAX_PROJECTS) {
-            throw new Error('Project limit reached');
-        }
-        // create project
-        const project = await Project.create(
-            [
-                {
-                    orgId,
-                    name,
-                },
-            ],
+    const { orgId, name } = data;
+    // check if organization exists
+    const organization = await Organization.findOne({
+        _id: orgId,
+    });
+    if (!organization) {
+        throw new Error('Organization not found');
+    }
+    if (organization.projects >= MAX_PROJECTS) {
+        throw new Error('Project limit reached');
+    }
+    // create project
+    const project = await Project.create([
+        {
+            orgId,
+            name,
+        },
+    ]);
+    // create default environments
+    const envs = await Environment.create([
+        {
+            orgId,
+            projectId: project.id,
+            name: ENVIRONMENTS.PRODUCTION,
+        },
+        {
+            orgId,
+            projectId: project.id,
+            name: ENVIRONMENTS.STAGING,
+        },
+        {
+            orgId,
+            projectId: project.id,
+            name: ENVIRONMENTS.DEVELOPMENT,
+        },
+        {
+            orgId,
+            projectId: project.id,
+            name: ENVIRONMENTS.TESTING,
+        },
+    ]);
+    await Promise.all([
+        // add environment ids to project
+        Project.updateOne(
+            { _id: project.id },
+            { $set: { environments: envs.map((env) => env.id) } }
+        ),
+        // increment project count in organization
+        Organization.updateOne({ _id: orgId }, { $inc: { projects: 1 } }),
+        // add project id to user
+        User.updateOne(
+            { _id: organization.adminId },
             {
-                session,
-            }
-        );
-        // create default environments
-        const envs = await Environment.create([
-            {
-                orgId,
-                projectId: project.id,
-                name: ENVIRONMENTS.PRODUCTION,
-            },
-            {
-                orgId,
-                projectId: project.id,
-                name: ENVIRONMENTS.STAGING,
-            },
-            {
-                orgId,
-                projectId: project.id,
-                name: ENVIRONMENTS.DEVELOPMENT,
-            },
-            {
-                orgId,
-                projectId: project.id,
-                name: ENVIRONMENTS.TESTING,
-            },
-        ]);
-        await Promise.all([
-            // add environment ids to project
-            Project.updateOne(
-                { _id: project.id },
-                { $set: { environments: envs.map((env) => env.id) } },
-                { session }
-            ),
-            // increment project count in organization
-            Organization.updateOne(
-                { _id: orgId },
-                { $inc: { projects: 1 } },
-                {
-                    session,
-                }
-            ),
-            // add project id to user
-            User.updateOne(
-                { _id: organization.adminId },
-                {
-                    $push: {
-                        projects: {
-                            projectId: project.id,
-                            isProjectAdmin: true,
-                        },
+                $push: {
+                    projects: {
+                        projectId: project.id,
+                        isProjectAdmin: true,
                     },
                 },
-                {
-                    session,
-                }
-            ),
-        ]);
-        await session.commitTransaction();
-        return project;
-    } catch (error) {
-        await session.abortTransaction();
-        throw error;
-    }
+            }
+        ),
+    ]);
+    return project;
 }
 
 /**
@@ -148,54 +125,46 @@ export async function getProject(data) {
  * @throws {Error} - If either of the id's are invalid
  */
 export async function deleteProject(data) {
-    const session = await db.startSession();
-    try {
-        session.startTransaction();
-        const { orgId, projectId } = data;
-        // check if organization exists
-        const organization = await Organization.findOne({
-            _id: orgId,
-        });
-        if (!organization) {
-            throw new Error('Organization not found');
-        }
-        // delete project and all environments
-        await Promise.all([
-            Project.deleteOne({
-                _id: projectId,
-                orgId,
-            }),
-            Environment.deleteMany({
-                orgId,
-                projectId,
-            }),
-            Organization.updateOne(
-                {
-                    _id: orgId,
-                },
-                {
-                    $inc: { projects: -1 },
-                }
-            ),
-            User.updateMany(
-                {
-                    orgId: orgId,
-                },
-                {
-                    $pull: {
-                        projects: {
-                            projectId,
-                        },
-                    },
-                }
-            ),
-        ]);
-        await session.commitTransaction();
-        return { message: 'Project deleted successfully' };
-    } catch (error) {
-        await session.abortTransaction();
-        throw error;
+    const { orgId, projectId } = data;
+    // check if organization exists
+    const organization = await Organization.findOne({
+        _id: orgId,
+    });
+    if (!organization) {
+        throw new Error('Organization not found');
     }
+    // delete project and all environments
+    await Promise.all([
+        Project.deleteOne({
+            _id: projectId,
+            orgId,
+        }),
+        Environment.deleteMany({
+            orgId,
+            projectId,
+        }),
+        Organization.updateOne(
+            {
+                _id: orgId,
+            },
+            {
+                $inc: { projects: -1 },
+            }
+        ),
+        User.updateMany(
+            {
+                orgId: orgId,
+            },
+            {
+                $pull: {
+                    projects: {
+                        projectId,
+                    },
+                },
+            }
+        ),
+    ]);
+    return { message: 'Project deleted successfully' };
 }
 
 /**
