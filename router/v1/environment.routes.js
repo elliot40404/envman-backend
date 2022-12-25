@@ -1,17 +1,18 @@
 import express from 'express';
-import * as projectController from '../../controllers/project.controller.js';
+import * as envController from '../../controllers/environment.controller.js';
 const api = express.Router();
 
 /**
- * @route   POST api/v1/project
- * @desc    create project
+ * @route   GET /api/v1/environment
+ * @desc    get an environment
  */
-api.post('/', projectController.createProject);
+api.get('/', envController.getEnvironment);
 
 /**
- * @route   POST api/v1/project
- * @desc    get project(s)
+ * @route   POST /api/v1/environment
+ * @desc    set environment variables
  */
-api.get('/', projectController.getProject);
+api.post('/', envController.setEnvironment);
+
 
 export default api;

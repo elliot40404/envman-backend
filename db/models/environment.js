@@ -27,8 +27,18 @@ export const schema = new Schema(
             required: true,
         },
         variables: {
-            type: Object,
-            default: {},
+            type: [
+                {
+                    key: {
+                        type: String,
+                        required: true,
+                    },
+                    value: {
+                        type: String,
+                        required: true,
+                    },
+                },
+            ],
         },
     },
     {

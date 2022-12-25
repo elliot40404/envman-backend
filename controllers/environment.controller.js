@@ -1,20 +1,23 @@
-import * as organizationService from '../services/organization.service.js';
+import * as envService from '../services/environment.service.js';
 import Joi from 'joi';
+import { ENVIRONMENTS } from '../db/models/environment.js';
 
 /**
- * @function createOrg
- * @description Controller to create a organization
+ * @function getEnvironment
+ * @description Controller to get an environment
  */
-export async function createOrg(req, res, next) {
+export async function getEnvironment(req, res, next) {
     try {
-        // TODO: Add email verification
         const schema = Joi.object({
-            email: Joi.string().email().required(),
-            name: Joi.string().min(3).max(30).required(),
-            orgName: Joi.string().min(3).max(30).required(),
+            orgId: Joi.string().length(24).alphanum().required(),
+            userId: Joi.string().length(24).alphanum().required(),
+            projectId: Joi.string().length(24).alphanum().required(),
+            env: Joi.string()
+                .valid(...Object.values(ENVIRONMENTS))
+                .required(),
         });
-        await schema.validateAsync(req.body);
-        res.json(await organizationService.createOrg(req.body));
+        await schema.validateAsync(req.query);
+        res.json(await envService.getEnvironment(req.query));
     } catch (err) {
         err.status = 400;
         next(err);
@@ -22,18 +25,29 @@ export async function createOrg(req, res, next) {
 }
 
 /**
- * @function getOrg
- * @description Controller to get a organization by adminId or orgId
+ * @function setEnvironment
+ * @description Controller to add environment variables
  */
-export async function getOrg(req, res, next) {
+export async function setEnvironment(req, res, next) {
     try {
-        // require adminId or orgId
         const schema = Joi.object({
-            adminId: Joi.string().optional().length(24).alphanum(),
-            orgId: Joi.string().optional().length(24).alphanum(),
-        }).or('adminId', 'orgId');
-        await schema.validateAsync(req.query);
-        res.json(await organizationService.getOrg(req.query));
+            orgId: Joi.string().length(24).alphanum().required(),
+            userId: Joi.string().length(24).alphanum().required(),
+            projectId: Joi.string().length(24).alphanum().required(),
+            env: Joi.string()
+                .valid(...Object.values(ENVIRONMENTS))
+                .required(),
+            variables: Joi.array()
+                .items(
+                    Joi.object({
+                        key: Joi.string().required(),
+                        value: Joi.string().required(),
+                    })
+                )
+                .required(),
+        });
+        await schema.validateAsync(req.body);
+        res.json(await envService.setEnvironment(req.body));
     } catch (err) {
         err.status = 400;
         next(err);
