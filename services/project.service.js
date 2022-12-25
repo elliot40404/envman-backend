@@ -30,36 +30,32 @@ export async function createProject(data) {
     const project = await Project.create({
         orgId,
         name,
+        projectAdmins: [organization.adminId],
     });
-    // create default environments
-    const envs = await Environment.create([
-        {
-            orgId,
-            projectId: project.id,
-            name: ENVIRONMENTS.PRODUCTION,
-        },
-        {
-            orgId,
-            projectId: project.id,
-            name: ENVIRONMENTS.STAGING,
-        },
-        {
-            orgId,
-            projectId: project.id,
-            name: ENVIRONMENTS.DEVELOPMENT,
-        },
-        {
-            orgId,
-            projectId: project.id,
-            name: ENVIRONMENTS.TESTING,
-        },
-    ]);
     await Promise.all([
-        // add environment ids to project
-        Project.updateOne(
-            { _id: project.id },
-            { $set: { environments: envs.map((env) => env.id) } }
-        ),
+        // create default environments
+        Environment.create([
+            {
+                orgId,
+                projectId: project.id,
+                name: ENVIRONMENTS.PRODUCTION,
+            },
+            {
+                orgId,
+                projectId: project.id,
+                name: ENVIRONMENTS.STAGING,
+            },
+            {
+                orgId,
+                projectId: project.id,
+                name: ENVIRONMENTS.DEVELOPMENT,
+            },
+            {
+                orgId,
+                projectId: project.id,
+                name: ENVIRONMENTS.TESTING,
+            },
+        ]),
         // increment project count in organization
         Organization.updateOne({ _id: orgId }, { $inc: { projects: 1 } }),
         // add project id to user
@@ -67,10 +63,7 @@ export async function createProject(data) {
             { _id: organization.adminId },
             {
                 $push: {
-                    projects: {
-                        projectId: project.id,
-                        isProjectAdmin: true,
-                    },
+                    projects: project.id,
                 },
             }
         ),
@@ -155,9 +148,7 @@ export async function deleteProject(data) {
             },
             {
                 $pull: {
-                    projects: {
-                        projectId,
-                    },
+                    projects: projectId,
                 },
             }
         ),
