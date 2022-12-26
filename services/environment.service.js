@@ -1,4 +1,5 @@
 import { Organization, User, Project, Environment } from '../db/db.js';
+import { ROLES } from '../db/models/project.js';
 
 /**
  * @async
@@ -18,17 +19,17 @@ export async function getEnvironment(data) {
         Project.findById(projectId),
         User.findById(userId),
     ]);
-    // check if org id is valid
+    // check if ids are valid
     if (!org || !project || !user) {
         throw new Error('Either the org, project or user id is invalid');
     }
-    const userEnv = user.projects.find(
-        (p) => p.projectId.toString() === projectId
-    );
-    if (!userEnv) {
+    if (!user?.projects?.length || !user?.projects?.includes(projectId)) {
         throw new Error('The user does not have access to the project');
     }
-    if (userEnv.isProjectViewer && !userEnv.environments.includes(env)) {
+    const projEnv = project.permissions.find(
+        (p) => p.userId.toString() === userId
+    );
+    if (projEnv.role === ROLES.VIEWER && !projEnv.environments.includes(env)) {
         throw new Error('The user does not have access to environment');
     }
     const envData = await Environment.findOne({
@@ -51,22 +52,23 @@ export async function getEnvironment(data) {
  */
 export async function setEnvironment(data) {
     const { orgId, projectId, userId, env, variables } = data;
+    // TODO: replace with findOne and include orgId in filter
     const [org, project, user] = await Promise.all([
         Organization.findById(orgId),
         Project.findById(projectId),
         User.findById(userId),
     ]);
-    // check if org id is valid
+    // check if id's are valid
     if (!org || !project || !user) {
         throw new Error('Either the org, project or user id is invalid');
     }
-    const userEnv = user.projects.find(
-        (p) => p.projectId.toString() === projectId
+    const userEnv = project.permissions.find(
+        (p) => p.userId.toString() === userId
     );
     if (!userEnv) {
         throw new Error('The user does not have access to the project');
     }
-    if (userEnv.isProjectViewer) {
+    if (userEnv.role !== ROLES.ADMIN) {
         throw new Error('The user does not have permission to set environment');
     }
     // TODO: as of now, the whole environment is being replaced. This can be changed to only update/add the variables
@@ -78,6 +80,9 @@ export async function setEnvironment(data) {
         },
         {
             variables,
+        },
+        {
+            new: true,
         }
     );
     return envData;
