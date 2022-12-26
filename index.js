@@ -48,6 +48,7 @@ app.use(
 );
 
 // TODO: add rate limiter
+// TODO: make users login with username and password (firebase or something)
 
 // -- ROUTES --
 app.use('/api/v1/organization', auth, organizationRoutes);
