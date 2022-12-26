@@ -26,4 +26,34 @@ api.delete('/', projectController.deleteProject);
  */
 api.patch('/', projectController.updateProject);
 
+/**
+ * @route   POST /api/v1/project/user
+ * @desc    add user to project
+ */
+api.post('/user', projectController.addUser);
+
+/**
+ * @route   DELETE /api/v1/project/user
+ * @desc    remove user from project
+ */
+api.delete('/user', projectController.removeUser);
+
+/**
+ * @route   PATCH /api/v1/project/user
+ * @desc    modify user role in project
+ */
+api.patch('/user', projectController.modUserRole);
+
+/**
+ * @route   POST /api/v1/project/user/environment
+ * @desc    add environment to user in project
+ */
+api.post('/user/environment', projectController.modEnvironment);
+
+/**
+ * @route   DELETE /api/v1/project/user/environment
+ * @desc    remove environment from user in project
+ */
+api.delete('/user/environment', projectController.modEnvironment);
+
 export default api;
