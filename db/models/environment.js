@@ -5,6 +5,7 @@ export const ENVIRONMENTS = Object.freeze({
     STAGING: 'staging',
     DEVELOPMENT: 'development',
     TESTING: 'testing',
+    ALL: 'all',
 });
 
 export const schema = new Schema(

@@ -1,4 +1,11 @@
 import { Schema } from 'mongoose';
+import { ENVIRONMENTS } from './environment.js';
+
+export const ROLES = Object.freeze({
+    VIEWER: 'viewer',
+    EDITOR: 'editor',
+    ADMIN: 'admin',
+});
 
 export const schema = new Schema(
     {
@@ -12,22 +19,25 @@ export const schema = new Schema(
             type: String,
             required: true,
         },
-        projectAdmins: {
-            type: [Schema.Types.ObjectId],
-            ref: 'User',
-            index: true,
-            default: [],
-        },
-        projectUsers: {
-            type: [Schema.Types.ObjectId],
-            ref: 'User',
-            index: true,
-            default: [],
-        },
-        projectViewers: {
-            type: [Schema.Types.ObjectId],
-            ref: 'User',
-            index: true,
+        permissions: {
+            type: [
+                {
+                    userId: {
+                        type: Schema.Types.ObjectId,
+                        ref: 'User',
+                    },
+                    role: {
+                        type: String,
+                        enum: Object.values(ROLES),
+                        default: ROLES.VIEWER,
+                    },
+                    environments: {
+                        type: [String],
+                        enum: Object.values(ENVIRONMENTS),
+                        default: [ENVIRONMENTS.TESTING],
+                    },
+                },
+            ],
             default: [],
         },
     },
