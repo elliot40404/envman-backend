@@ -28,12 +28,18 @@ export async function createOrg(data) {
  * @throws {Error} - If either of the id's are invalid
  */
 export async function getOrg(data) {
-    const { adminId, orgId } = data;
-    const organization = await Organization.findOne({
-        $or: [{ adminId }, { _id: orgId }],
-    });
-    if (!organization) {
-        throw new Error('Organization not found');
+    const { adminId, orgId, userId } = data;
+    const [organization, user] = await Promise.all([
+        Organization.findOne({
+            $or: [{ adminId }, { _id: orgId }],
+        }),
+        User.findOne({ _id: userId, orgId }),
+    ]);
+    if (!organization || !user) {
+        throw new Error('Organization or user not found');
+    }
+    if (!user.isAccountAdmin && !user.isSuperAdmin) {
+        throw new Error('User does not have access to get organization');
     }
     return organization;
 }

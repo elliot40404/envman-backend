@@ -31,6 +31,7 @@ export async function getOrg(req, res, next) {
         const schema = Joi.object({
             adminId: Joi.string().optional().length(24).alphanum(),
             orgId: Joi.string().optional().length(24).alphanum(),
+            userId: Joi.string().length(24).alphanum().required(),
         }).or('adminId', 'orgId');
         await schema.validateAsync(req.query);
         res.json(await organizationService.getOrg(req.query));
