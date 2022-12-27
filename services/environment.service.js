@@ -71,7 +71,7 @@ export async function setEnvironment(data) {
     if (userEnv.role !== ROLES.ADMIN) {
         throw new Error('The user does not have permission to set environment');
     }
-    // TODO: as of now, the whole environment is being replaced. This can be changed to only update/add the variables
+    // NOTE: as of now, the whole environment is being replaced. This can be changed to only update/add the variables
     const envData = await Environment.findOneAndUpdate(
         {
             orgId,
