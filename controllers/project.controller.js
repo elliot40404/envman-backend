@@ -130,7 +130,7 @@ export async function removeUser(req, res, next) {
 }
 
 /**
- * @function modifyUserRole
+ * @function modUserRole
  * @description Controller to modify a user's role in a project
  */
 export async function modUserRole(req, res, next) {
@@ -139,6 +139,7 @@ export async function modUserRole(req, res, next) {
             orgId: Joi.string().length(24).alphanum().required(),
             projectId: Joi.string().length(24).alphanum().required(),
             userId: Joi.string().length(24).alphanum().required(),
+            modifyId: Joi.string().length(24).alphanum().required(),
             role: Joi.string()
                 .valid(...Object.values(ROLES))
                 .required(),
@@ -161,16 +162,20 @@ export async function modEnvironment(req, res, next) {
             orgId: Joi.string().length(24).alphanum().required(),
             projectId: Joi.string().length(24).alphanum().required(),
             userId: Joi.string().length(24).alphanum().required(),
+            modifyId: Joi.string().length(24).alphanum().required(),
             env: Joi.string()
                 .valid(...Object.values(ENVIRONMENTS))
-                .required(),
-        });
+                .optional(),
+            envs: Joi.array().items(
+                Joi.string().valid(...Object.values(ENVIRONMENTS))
+            ).optional(),
+        }).xor('envs', 'env');
         await schema.validateAsync(req.body);
         // check method
         if (req.method === 'POST') {
-            res.json(await projectService.addEnvironment(req.body));
+            res.json(await projectService.modEnvironment(req.body, false));
         } else if (req.method === 'DELETE') {
-            res.json(await projectService.removeEnvironment(req.body));
+            res.json(await projectService.modEnvironment(req.body, true));
         }
     } catch (err) {
         err.status = 400;

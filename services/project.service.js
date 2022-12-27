@@ -7,7 +7,7 @@ const MAX_PROJECTS = process.env.MAX_PROJECTS
     ? parseInt(process.env.MAX_PROJECTS)
     : 5;
 
-// TODO: as of now there is no accountAdmin only superAdmin
+// NOTE: as of now there is no accountAdmin only superAdmin
 
 /**
  * @async
@@ -51,7 +51,7 @@ export async function createProject(data) {
         throw new Error('Project name already exists');
     }
     // create project
-    // TODO: assumes no accountAdmins and adds superAdmin as admin
+    // NOTE: assumes no accountAdmins and adds superAdmin as admin
     const project = await Project.create({
         orgId,
         name,
@@ -129,7 +129,7 @@ export async function getProject(data) {
     if (projectId) {
         // check if user has access to project
         if (!user.projects.includes(projectId)) {
-            // TODO: this is also thrown if project does not exist as project id is not validated
+            // NOTE: this is also thrown if project does not exist as project id is not validated
             throw new Error('User does not have access to project');
         }
         const project = await Project.findOne({
@@ -419,7 +419,7 @@ export async function removeUser(data) {
 
 /**
  * @async
- * @function modifyUserRole
+ * @function modUserRole
  * @description Service to modify a user's role in a project
  * @param {object} data - The account data
  * @returns {Promise<object>}
@@ -428,6 +428,10 @@ export async function removeUser(data) {
  */
 export async function modUserRole(data) {
     const { orgId, projectId, userId, modifyId, role } = data;
+    // check if orgId and modifyId are same
+    if (userId === modifyId) {
+        throw new Error('Cannot modify self role');
+    }
     // check if organization exists
     const [organization, project, user, mId] = await Promise.all([
         Organization.findOne({
@@ -449,7 +453,31 @@ export async function modUserRole(data) {
     if (!organization || !project || !user || !mId) {
         throw new Error('Organization, project, user or modifyId not found');
     }
-    // FIXME: project admins can have max 2 admins
+    // check if user is project admin
+    const projectEnv = project.permissions.find(
+        (p) => p.userId.toString() === userId
+    );
+    if (!projectEnv) {
+        throw new Error('User is not in project');
+    }
+    if (projectEnv.role !== ROLES.ADMIN) {
+        throw new Error('User is not authorized to perform this action');
+    }
+    await Project.updateOne(
+        {
+            _id: projectId,
+            orgId,
+            'permissions.userId': modifyId,
+        },
+        {
+            $set: {
+                'permissions.$.role': role,
+            },
+        }
+    );
+    return {
+        message: 'User role modified successfully',
+    };
 }
 
 /**
@@ -457,14 +485,15 @@ export async function modUserRole(data) {
  * @function addEnvironment
  * @description Service to add environment to a user in a project
  * @param {object} data - The account data
+ * @param {boolean} remove - If true, remove environment from user
  * @returns {Promise<object>}
  * @throws {Error} - If either of the id's are invalid
  * @throws {Error} - If user is not in project
  */
-export async function addEnvironment(data) {
-    const { orgId, projectId, userId, addId, envs } = data;
+export async function modEnvironment(data, remove = false) {
+    const { orgId, projectId, userId, modifyId, envs, env } = data;
     // check if organization exists
-    const [organization, project, user, add] = await Promise.all([
+    const [organization, project, user, mId] = await Promise.all([
         Organization.findOne({
             _id: orgId,
         }),
@@ -477,98 +506,67 @@ export async function addEnvironment(data) {
             orgId,
         }),
         User.findOne({
-            _id: addId,
+            _id: modifyId,
             orgId,
         }),
     ]);
-    if (!organization || !project || !user || !add) {
+    if (!organization || !project || !user || !mId) {
         throw new Error('Organization, project, user or addId not found');
     }
     // check if user is project admin
-    if (!user.isProjectAdmin) {
-        throw new Error('User is not authorized to perform this action');
-    }
-    // check if user is in project
-    if (!add.projects.includes(projectId)) {
+    const userEnv = project.permissions.find(
+        (p) => p.userId.toString() === userId
+    );
+    if (!userEnv) {
         throw new Error('User is not in project');
     }
-    // FIXME: envs should be unique
+    // check if user is project admin
+    if (userEnv.role !== ROLES.ADMIN) {
+        throw new Error('User is not authorized to perform this action');
+    }
+    let updateQuery = {};
+    if (remove) {
+        if (env) {
+            updateQuery = {
+                $pull: {
+                    'permissions.$.environments': env,
+                },
+            };
+        } else {
+            updateQuery = {
+                $pull: {
+                    'permissions.$.environments': {
+                        $in: envs,
+                    },
+                },
+            };
+        }
+    } else {
+        if (env) {
+            updateQuery = {
+                $addToSet: {
+                    'permissions.$.environments': env,
+                },
+            };
+        } else {
+            updateQuery = {
+                $addToSet: {
+                    'permissions.$.environments': {
+                        $each: envs,
+                    },
+                },
+            };
+        }
+    }
     await Project.updateOne(
         {
             _id: projectId,
             orgId,
-            'permissions.userId': addId,
+            'permissions.userId': modifyId,
         },
-        {
-            $push: {
-                'permissions.$.environments': {
-                    $each: envs,
-                },
-            },
-        }
+        updateQuery
     );
     return {
-        message: 'Environment added to user successfully',
-    };
-}
-
-
-/**
- * @async
- * @function removeEnvironment
- * @description Service to remove environment from a user in a project
- * @param {object} data - The account data
- * @returns {Promise<object>}
- * @throws {Error} - If either of the id's are invalid
- * @throws {Error} - If user is not in project
- */
-export async function removeEnvironment(data) {
-    const { orgId, projectId, userId, addId, envs } = data;
-    // check if organization exists
-    const [organization, project, user, add] = await Promise.all([
-        Organization.findOne({
-            _id: orgId,
-        }),
-        Project.findOne({
-            _id: projectId,
-            orgId,
-        }),
-        User.findOne({
-            _id: userId,
-            orgId,
-        }),
-        User.findOne({
-            _id: addId,
-            orgId,
-        }),
-    ]);
-    if (!organization || !project || !user || !add) {
-        throw new Error('Organization, project, user or addId not found');
-    }
-    // check if user is project admin
-    if (!user.isProjectAdmin) {
-        throw new Error('User is not authorized to perform this action');
-    }
-    // check if user is in project
-    if (!add.projects.includes(projectId)) {
-        throw new Error('User is not in project');
-    }
-    // FIXME: envs should be unique
-    await Project.updateOne(
-        {
-            _id: projectId,
-            orgId,
-            'permissions.userId': addId,
-        },
-        {
-            $pull: {
-                'permissions.$.environments': {
-                    $each: envs,
-                },
-            },
-        }
-    );
-    return {
-        message: 'Environment added to user successfully',
+        message: 'Environment permissions modified successfully',
     };
 }
