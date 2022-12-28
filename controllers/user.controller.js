@@ -1,20 +1,18 @@
-import * as organizationService from '../services/organization.service.js';
+import * as userService from '../services/user.service.js';
 import Joi from 'joi';
 
 /**
- * @function createOrg
- * @description Controller to create a organization
+ * @function createUser
+ * @description controller to add a user to an organization
  */
-export async function createOrg(req, res, next) {
+export async function createUser(req, res, next) {
     try {
-        // TODO: Add email verification
         const schema = Joi.object({
-            email: Joi.string().email().required(),
-            name: Joi.string().min(3).max(30).required(),
-            orgName: Joi.string().min(3).max(30).required(),
+            invitationId: Joi.string().required().length(24).alphanum(),
+            name: Joi.string().required().min(3).max(30),
         });
         await schema.validateAsync(req.body);
-        res.json(await organizationService.createOrg(req.body));
+        res.json(await userService.createUser(req.body));
     } catch (err) {
         err.status = 400;
         next(err);
@@ -22,10 +20,10 @@ export async function createOrg(req, res, next) {
 }
 
 /**
- * @function getOrg
- * @description Controller to get a organization by adminId or orgId
+ * @function getUser
+ * @description Controller to get a user
  */
-export async function getOrg(req, res, next) {
+export async function getUser(req, res, next) {
     try {
         // require adminId or orgId
         const schema = Joi.object({
@@ -33,7 +31,43 @@ export async function getOrg(req, res, next) {
             orgId: Joi.string().optional().length(24).alphanum(),
         }).or('adminId', 'orgId');
         await schema.validateAsync(req.query);
-        res.json(await organizationService.getOrg(req.query));
+        res.json(await userService.getOrg(req.query));
+    } catch (err) {
+        err.status = 400;
+        next(err);
+    }
+}
+
+/**
+ * @function inviteUser
+ * @description Controller to invite a user
+ */
+export async function inviteUser(req, res, next) {
+    try {
+        const schema = Joi.object({
+            email: Joi.string().required().email(),
+            orgId: Joi.string().required().length(24).alphanum(),
+            isAccountAdmin: Joi.boolean().optional(),
+        });
+        await schema.validateAsync(req.body);
+        res.json(await userService.inviteUser(req.body));
+    } catch (err) {
+        err.status = 400;
+        next(err);
+    }
+}
+
+/**
+ * @function acceptInvite
+ * @description Controller to accept an invite
+ */
+export async function acceptInvite(req, res, next) {
+    try {
+        const schema = Joi.object({
+            invitationId: Joi.string().required().length(24).alphanum(),
+        });
+        await schema.validateAsync(req.query);
+        res.json(await userService.acceptInvite(req.query));
     } catch (err) {
         err.status = 400;
         next(err);
