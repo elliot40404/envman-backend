@@ -6,8 +6,6 @@ COPY package*.json ./
 
 RUN npm ci --omit=dev
 
-COPY ./dist ./
-
 COPY  ./app.sh  ./
 
 EXPOSE 4000
