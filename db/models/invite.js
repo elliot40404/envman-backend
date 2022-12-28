@@ -7,36 +7,27 @@ export const schema = new Schema(
             required: true,
             unique: true,
         },
+        accepted: {
+            type: Boolean,
+            default: false,
+        },
         orgId: {
             type: Schema.Types.ObjectId,
             ref: 'Organization',
             index: true,
         },
-        verified: {
-            type: Boolean,
-            default: false,
-        },
-        name: {
-            type: String,
-            required: true,
-        },
-        isSuperAdmin: {
-            type: Boolean,
-            default: false,
-        },
         isAccountAdmin: {
             type: Boolean,
             default: false,
         },
-        projects: {
-            type: [Schema.Types.ObjectId],
-            ref: 'Project',
-            index: true,
-            default: [],
+        expireAt: {
+            type: Date,
+            default: Date.now,
+            expires: '1d',
         },
     },
     {
-        collection: 'users',
+        collection: 'invites',
         timestamps: true,
     }
 );

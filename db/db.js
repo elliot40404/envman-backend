@@ -4,6 +4,7 @@ import * as organization from './models/organization.js';
 import * as user from './models/user.js';
 import * as environment from './models/environment.js';
 import * as project from './models/project.js';
+import * as invite from './models/invite.js';
 
 const uri = process.env.MONGO_URL;
 const opts = {
@@ -27,5 +28,6 @@ export const Organization = db.model('Organization', organization.schema);
 export const User = db.model('User', user.schema);
 export const Environment = db.model('Environment', environment.schema);
 export const Project = db.model('Project', project.schema);
+export const Invite = db.model('Invite', invite.schema);
 
 // TODO: mongodb requires replica set for transactions
