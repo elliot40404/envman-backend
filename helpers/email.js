@@ -86,3 +86,15 @@ export const emailSubject = Object.freeze({
     changeEmail: 'Request for email address change',
     changePassword: 'Request for password change',
 });
+
+/**
+ * @function formatUri
+ * @param {string} id - id of the invite
+ * @returns {string} - formatted uri
+ * @description - formats the uri for the invite email
+ */
+export const formatUri = (id) => {
+    return `${
+        process.env.APP_URI
+    }/user/invite?invitationId=${encodeURIComponent(id)}`;
+};
