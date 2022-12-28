@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
 import organizationRoutes from './router/v1/organization.routes.js';
+import rateLimit from 'express-rate-limit';
 import projectRoutes from './router/v1/project.routes.js';
 import userRoutes from './router/v1/user.routes.js';
 import environmentRoutes from './router/v1/environment.routes.js';
@@ -46,8 +47,16 @@ app.use(
         origin: process.env.CORS_ORIGIN.split(','),
     })
 );
+app.use(
+    rateLimit({
+        windowMs: 2 * 60 * 1000,
+        max: 100,
+        standardHeaders: true,
+        legacyHeaders: false, 
+    })
+);
 
-// TODO: add rate limiter
+// TODO: add logging module
 // TODO: make users login with username and password (firebase or something)
 // TODO: add standard error codes Examlpe: ENOTFOUND, EDOESNOTEXIST, EALREADYEXISTS, EINVALID, EUNAUTHORIZED
 
