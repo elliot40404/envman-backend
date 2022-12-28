@@ -52,3 +52,4 @@ db/data
 .vscode
 zip/
 logs/
+test.js
