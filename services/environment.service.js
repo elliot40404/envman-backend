@@ -52,11 +52,10 @@ export async function getEnvironment(data) {
  */
 export async function setEnvironment(data) {
     const { orgId, projectId, userId, env, variables } = data;
-    // TODO: replace with findOne and include orgId in filter
     const [org, project, user] = await Promise.all([
-        Organization.findById(orgId),
-        Project.findById(projectId),
-        User.findById(userId),
+        Organization.findOne({ _id: org }),
+        Project.findOne({ _id: projectId, orgId }),
+        User.findOne({ _id: userId, orgId }),
     ]);
     // check if id's are valid
     if (!org || !project || !user) {
