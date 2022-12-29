@@ -30,4 +30,10 @@ export const Environment = db.model('Environment', environment.schema);
 export const Project = db.model('Project', project.schema);
 export const Invite = db.model('Invite', invite.schema);
 
+Organization.syncIndexes();
+User.syncIndexes();
+Environment.syncIndexes();
+Project.syncIndexes();
+Invite.syncIndexes();
+
 // TODO: mongodb requires replica set for transactions

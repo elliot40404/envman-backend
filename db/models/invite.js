@@ -1,4 +1,5 @@
 import { Schema } from 'mongoose';
+import 'dotenv/config';
 
 export const schema = new Schema(
     {
@@ -20,14 +21,13 @@ export const schema = new Schema(
             type: Boolean,
             default: false,
         },
-        expireAt: {
-            type: Date,
-            default: Date.now,
-            expires: '1d',
-        },
     },
     {
         collection: 'invites',
         timestamps: true,
     }
 );
+
+const eat = parseInt(process.env.INVITE_EXPIRATION) || 12 * 60 * 60;
+
+schema.index({ createdAt: 1 }, { expireAfterSeconds: eat });
