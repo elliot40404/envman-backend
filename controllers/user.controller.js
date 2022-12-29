@@ -25,13 +25,13 @@ export async function createUser(req, res, next) {
  */
 export async function getUser(req, res, next) {
     try {
-        // require adminId or orgId
         const schema = Joi.object({
-            adminId: Joi.string().optional().length(24).alphanum(),
-            orgId: Joi.string().optional().length(24).alphanum(),
-        }).or('adminId', 'orgId');
+            userId: Joi.string().required().length(24).alphanum(),
+            orgId: Joi.string().required().length(24).alphanum(),
+            fetchId: Joi.string().optional().length(24).alphanum(),
+        });
         await schema.validateAsync(req.query);
-        res.json(await userService.getOrg(req.query));
+        res.json(await userService.getUser(req.query));
     } catch (err) {
         err.status = 400;
         next(err);
@@ -48,6 +48,7 @@ export async function inviteUser(req, res, next) {
             email: Joi.string().required().email(),
             orgId: Joi.string().required().length(24).alphanum(),
             isAccountAdmin: Joi.boolean().optional(),
+            userId: Joi.string().required().length(24).alphanum(),
         });
         await schema.validateAsync(req.body);
         res.json(await userService.inviteUser(req.body));
@@ -58,16 +59,36 @@ export async function inviteUser(req, res, next) {
 }
 
 /**
- * @function acceptInvite
- * @description Controller to accept an invite
+ * @function getUserInvites
+ * @description Controller to get user invites
  */
-export async function acceptInvite(req, res, next) {
+export async function getUserInvites(req, res, next) {
     try {
         const schema = Joi.object({
-            invitationId: Joi.string().required().length(24).alphanum(),
+            orgId: Joi.string().required().length(24).alphanum(),
+            userId: Joi.string().required().length(24).alphanum(),
         });
         await schema.validateAsync(req.query);
-        res.json(await userService.acceptInvite(req.query));
+        res.json(await userService.getUserInvites(req.query));
+    } catch (err) {
+        err.status = 400;
+        next(err);
+    }
+}
+
+/**
+ * @function deleteUserInvite
+ * @description Controller to delete a user invite
+ */
+export async function deleteUserInvite(req, res, next) {
+    try {
+        const schema = Joi.object({
+            orgId: Joi.string().required().length(24).alphanum(),
+            inviteId: Joi.string().required().length(24).alphanum(),
+            userId: Joi.string().required().length(24).alphanum(),
+        });
+        await schema.validateAsync(req.body);
+        res.json(await userService.deleteUserInvite(req.body));
     } catch (err) {
         err.status = 400;
         next(err);

@@ -8,12 +8,90 @@ import {
 
 /**
  * @async
+ * @function createUser
+ * @description Service to add a user to an organization
+ * @param {Object} data
+ * @param {String} data.invitationId
+ * @param {String} data.name
+ * @returns {Promise<User>} user
+ * @throws {Error} if inviteId is invalid
+ * @throws {Error} if user already exists
+ */
+export const createUser = async (data) => {
+    const { name, invitationId } = data;
+    const invite = await Invite.findOne({
+        _id: invitationId,
+    });
+    console.log(invite);
+    if (!invite) {
+        throw new Error('Invalid invite id');
+    }
+    const user = await User.findOne({
+        email: invite.email,
+    });
+    if (user) {
+        throw new Error('User already exists');
+    }
+    const [newUser] = await Promise.all([
+        User.create({
+            email: invite.email,
+            name,
+            orgId: invite.orgId,
+            isAccountAdmin: invite.isAccountAdmin || false,
+            verified: true,
+        }),
+        Invite.deleteOne({
+            _id: invitationId,
+        }),
+    ]);
+    return newUser;
+};
+
+/**
+ * @async
+ * @function getUser
+ * @description Service to get a user by user id or by org
+ * @param {Object} data
+ * @param {String} data.userId
+ * @param {String} data.orgId
+ * @param {String} data.fetchId
+ * @returns {Promise<User>|Promise<User[]>} user
+ */
+export const getUser = async (data) => {
+    const { userId, orgId, fetchId } = data;
+    if (fetchId) {
+        const sUser = await User.findOne({
+            _id: fetchId,
+            orgId,
+        });
+        return sUser;
+    }
+    // check if user is admin
+    const user = await User.findOne({
+        _id: userId,
+        orgId,
+    });
+    if (!user) {
+        throw new Error('Invalid user id');
+    }
+    if (!user.isAccountAdmin && !user.isSuperAdmin) {
+        throw new Error('Unauthorized');
+    }
+    const users = await User.find({
+        orgId,
+    });
+    return users;
+};
+
+/**
+ * @async
  * @function inviteUser
  * @description Service to invite a user
  * @param {Object} data
  * @param {String} data.email
  * @param {String} data.orgId
  * @param {Boolean} data.isAccountAdmin
+ * @param {String} data.userId
  * @returns {Promise<User>} user
  * @throws {Error} if email is already in use
  * @throws {Error} if orgId is invalid
@@ -21,8 +99,8 @@ import {
  * @throws {Error} if user already exists
  */
 export const inviteUser = async (data) => {
-    const { email, orgId, isAccountAdmin } = data;
-    const [org, user, invite] = await Promise.all([
+    const { email, orgId, isAccountAdmin, userId } = data;
+    const [org, user, invite, admin] = await Promise.all([
         Organization.findOne({ _id: orgId }),
         User.findOne({
             email,
@@ -31,15 +109,22 @@ export const inviteUser = async (data) => {
             email,
             orgId,
         }),
+        User.findOne({
+            _id: userId,
+            orgId,
+        }),
     ]);
-    if (!org) {
-        throw new Error('Invalid organization id');
+    if (!org || !admin) {
+        throw new Error('Invalid organization or userId id');
+    }
+    if (!admin.isAccountAdmin && !admin.isSuperAdmin) {
+        throw new Error('Unauthorized');
     }
     if (user) {
-        throw new Error('User already exists');
+        throw new Error('User with email already exists');
     }
     if (invite) {
-        throw new Error('Invite already exists');
+        throw new Error('Invite for email already exists');
     }
     const newInvite = await Invite.create({
         email,
@@ -51,32 +136,85 @@ export const inviteUser = async (data) => {
         emailSubject.inviteEmail,
         emailTemplates.inviteEmail(org.name, formatUri(newInvite.id))
     );
-    return newInvite;
+    return {
+        message: 'Invite sent',
+    };
 };
 
 /**
  * @async
- * @function acceptInvite
- * @description Service to accept an invite
+ * @function getUserInvites
+ * @description Service to get user invites
+ * @param {Object} data
+ * @param {String} data.orgId
+ * @returns {Promise<Invite[]>} invites
+ * @throws {Error} if orgId is invalid
+ * @throws {Error} if user is not super admin or account admin
+ */
+export const getUserInvites = async (data) => {
+    const { orgId, userId } = data;
+    const [org, user] = await Promise.all([
+        Organization.findOne({
+            _id: orgId,
+        }),
+        User.findOne({
+            _id: userId,
+            orgId,
+        }),
+    ]);
+    if (!org || !user) {
+        throw new Error('Invalid organization or user id');
+    }
+    if (!user.isAccountAdmin && !user.isSuperAdmin) {
+        throw new Error('Unauthorized');
+    }
+    const invites = await Invite.find({
+        orgId,
+    });
+    return invites;
+};
+
+/**
+ * @async
+ * @function deleteUserInvite
+ * @description Service to delete a user invite
  * @param {Object} data
  * @param {String} data.inviteId
- * @param {String} data.name
- * @returns {Promise<User>} user
- * @throws {Error} if inviteId is invalid
+ * @param {String} data.orgId
+ * @param {String} data.userId
+ * @returns {Promise<Invite>} invite
+ * @throws {Error} if orgId is invalid
+ * @throws {Error} if user is not super admin or account admin
  */
-export const acceptInvite = async (data) => {
-    const { inviteId, name } = data;
-    const invite = await Invite.findOne({ _id: inviteId });
+export const deleteUserInvite = async (data) => {
+    const { inviteId, orgId, userId } = data;
+    const [org, user, invite] = await Promise.all([
+        Organization.findOne({
+            _id: orgId,
+        }),
+        User.findOne({
+            _id: userId,
+            orgId,
+        }),
+        Invite.findOne({
+            _id: inviteId,
+            orgId,
+        }),
+    ]);
+    if (!org || !user) {
+        throw new Error('Invalid organization or user id');
+    }
+    if (!user.isAccountAdmin && !user.isSuperAdmin) {
+        throw new Error('Unauthorized');
+    }
     if (!invite) {
         throw new Error('Invalid invite id');
     }
-    const user = await User.create({
-        email: invite.email,
-        name: name || "User's Name",
-        orgId: invite.orgId,
-        verified: true,
-        isAccountAdmin: invite.isAccountAdmin,
+    await Invite.deleteOne({
+        _id: inviteId,
+        orgId,
     });
-    await Invite.deleteOne({ _id: inviteId });
-    return user;
+    return {
+        message: 'Invite deleted successfully',
+    };
 };
