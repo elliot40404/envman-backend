@@ -36,4 +36,6 @@ Environment.syncIndexes();
 Project.syncIndexes();
 Invite.syncIndexes();
 
+console.info('DB INFO:', 'Indexes synced');
+
 // TODO: mongodb requires replica set for transactions
