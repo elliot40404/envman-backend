@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { validateToken } from '../helpers/firebase.js';
 
 const auth = async (req, res, next) => {
     const Authorization = req.headers.authorization;
@@ -10,11 +11,20 @@ const auth = async (req, res, next) => {
         if (!token) {
             return res.status(401).send('Unauthorized');
         }
-        if (token !== process.env.API_TOKEN) {
-            return res.status(401).send('Unauthorized');
+        if (process.env.NODE_ENV === 'development') {
+            if (token !== process.env.API_TOKEN) {
+                return res.status(401).send('Unauthorized');
+            }
+        } else {
+            const decodedToken = await validateToken(token);
+            if (!decodedToken) {
+                return res.status(401).send('Unauthorized');
+            }
+            req.user = decodedToken;
         }
         next();
     } catch (error) {
+        console.log(error);
         res.status(401).send('Invalid token');
     }
 };
