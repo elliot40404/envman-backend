@@ -53,3 +53,4 @@ db/data
 zip/
 logs/
 test.js
+firebase.json
