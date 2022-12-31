@@ -32,7 +32,12 @@ api.get('/invite', userController.getUserInvites);
  */
 api.delete('/invite', userController.deleteUserInvite);
 
-// TODO: add route to delete invite
+/**
+ * @route GET /api/v1/user/verify
+ * @desc verify user email
+ */
+api.get('/verify', userController.verifyEmail);
+
 // NOTE: cannot proceed to accept invite as that needs login
 
 export default api;

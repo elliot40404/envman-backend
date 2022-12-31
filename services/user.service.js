@@ -1,10 +1,5 @@
-import { Organization, User, Invite } from '../db/db.js';
-import {
-    sendEmail,
-    emailSubject,
-    emailTemplates,
-    formatUri,
-} from '../helpers/email.js';
+import {Invite, Organization, User} from '../db/db.js';
+import {emailSubject, emailTemplates, formatUri, sendEmail,} from '../helpers/email.js';
 
 /**
  * @async
@@ -59,28 +54,27 @@ export const createUser = async (data) => {
  */
 export const getUser = async (data) => {
     const { userId, orgId, fetchId } = data;
-    if (fetchId) {
-        const sUser = await User.findOne({
+    if (!fetchId) {
+        const user = await User.findOne({
+            _id: userId,
+            orgId,
+        });
+        if (!user) {
+            throw new Error('Invalid user id');
+        }
+        // check if user is admin
+        if (!user.isAccountAdmin && !user.isSuperAdmin) {
+            throw new Error('Unauthorized');
+        }
+        return await User.find({
+            orgId,
+        });
+    } else {
+        return await User.findOne({
             _id: fetchId,
             orgId,
         });
-        return sUser;
     }
-    // check if user is admin
-    const user = await User.findOne({
-        _id: userId,
-        orgId,
-    });
-    if (!user) {
-        throw new Error('Invalid user id');
-    }
-    if (!user.isAccountAdmin && !user.isSuperAdmin) {
-        throw new Error('Unauthorized');
-    }
-    const users = await User.find({
-        orgId,
-    });
-    return users;
 };
 
 /**
@@ -92,7 +86,7 @@ export const getUser = async (data) => {
  * @param {String} data.orgId
  * @param {Boolean} data.isAccountAdmin
  * @param {String} data.userId
- * @returns {Promise<User>} user
+ * @returns {String} user
  * @throws {Error} if email is already in use
  * @throws {Error} if orgId is invalid
  * @throws {Error} if invite already exists
@@ -168,10 +162,9 @@ export const getUserInvites = async (data) => {
     if (!user.isAccountAdmin && !user.isSuperAdmin) {
         throw new Error('Unauthorized');
     }
-    const invites = await Invite.find({
+    return await Invite.find({
         orgId,
     });
-    return invites;
 };
 
 /**
@@ -182,7 +175,7 @@ export const getUserInvites = async (data) => {
  * @param {String} data.inviteId
  * @param {String} data.orgId
  * @param {String} data.userId
- * @returns {Promise<Invite>} invite
+ * @returns {String} invite
  * @throws {Error} if orgId is invalid
  * @throws {Error} if user is not super admin or account admin
  */
@@ -218,3 +211,31 @@ export const deleteUserInvite = async (data) => {
         message: 'Invite deleted successfully',
     };
 };
+
+/**
+ * @async
+ * @function verifyEmail
+ * @description Service to verify email
+ * @param {Object} data
+ * @param {String} data.verificationId
+ * @returns {String} user
+ * @throws {Error} if verificationId is invalid
+ */
+export const verifyEmail = async (data) => {
+    const { verificationId } = data;
+    const user = await User.findOne({
+        _id: verificationId,
+    }
+    );
+    if (!user) {
+        throw new Error('Invalid verification id');
+    }
+    if (user.verified) {
+        throw new Error('Email already verified');
+    }
+    user.verified = true;
+    await user.save();
+    return {
+        message: 'Email verified successfully',
+    }
+}

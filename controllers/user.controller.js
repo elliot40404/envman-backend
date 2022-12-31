@@ -94,3 +94,21 @@ export async function deleteUserInvite(req, res, next) {
         next(err);
     }
 }
+
+/**
+ * @async
+ * @function verifyEmail
+ * @description Controller to verify email
+ */
+export async function verifyEmail(req, res, next) {
+    try {
+        const schema = Joi.object({
+            verificationId: Joi.string().required().length(24).alphanum(),
+        });
+        await schema.validateAsync(req.query);
+        res.json(await userService.verifyEmail(req.query));
+    } catch (err) {
+        err.status = 400;
+        next(err);
+    }
+}
