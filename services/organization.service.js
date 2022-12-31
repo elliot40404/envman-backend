@@ -1,4 +1,10 @@
 import { Organization, User } from '../db/db.js';
+import {
+    emailSubject,
+    emailTemplates,
+    formatUri,
+    sendEmail,
+} from '../helpers/email.js';
 
 /**
  * @async
@@ -16,16 +22,21 @@ export async function createOrg(data) {
         adminId: user.id,
     });
     await User.updateOne({ _id: user.id }, { orgId: organization.id });
+    await sendEmail(
+        email,
+        emailSubject.verifyEmail,
+        emailTemplates.verifyEmail(formatUri.verify(user.id))
+    );
     return { organization, user };
 }
 
 /**
  * @async
  * @function getOrg
- * @description Service to get a organization
+ * @description Service to get an organization
  * @param {object} data - The account data
  * @returns {Promise<object>}
- * @throws {Error} - If either of the id's are invalid
+ * @throws {Error} - If either of the ids are invalid
  */
 export async function getOrg(data) {
     const { adminId, orgId, userId } = data;
