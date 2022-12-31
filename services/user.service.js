@@ -1,5 +1,10 @@
-import {Invite, Organization, User} from '../db/db.js';
-import {emailSubject, emailTemplates, formatUri, sendEmail,} from '../helpers/email.js';
+import { Invite, Organization, User } from '../db/db.js';
+import {
+    emailSubject,
+    emailTemplates,
+    formatUri,
+    sendEmail,
+} from '../helpers/email.js';
 
 /**
  * @async
@@ -128,7 +133,7 @@ export const inviteUser = async (data) => {
     await sendEmail(
         email,
         emailSubject.inviteEmail,
-        emailTemplates.inviteEmail(org.name, formatUri(newInvite.id))
+        emailTemplates.inviteEmail(org.name, formatUri.invite(newInvite.id))
     );
     return {
         message: 'Invite sent',
@@ -225,8 +230,7 @@ export const verifyEmail = async (data) => {
     const { verificationId } = data;
     const user = await User.findOne({
         _id: verificationId,
-    }
-    );
+    });
     if (!user) {
         throw new Error('Invalid verification id');
     }
@@ -237,5 +241,5 @@ export const verifyEmail = async (data) => {
     await user.save();
     return {
         message: 'Email verified successfully',
-    }
-}
+    };
+};
