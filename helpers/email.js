@@ -60,7 +60,7 @@ export const sendEmail = async (to, subject, html) => {
  * @property {function} changePassword - email template for change password
  */
 export const emailTemplates = Object.freeze({
-    confirmEmail: (verifyUri) => {
+    verifyEmail: (verifyUri) => {
         return confirmTemplate.replaceAll('{{verifyUri}}', verifyUri);
     },
     inviteEmail: (orgName, inviteUri) => {
@@ -88,13 +88,23 @@ export const emailSubject = Object.freeze({
 });
 
 /**
- * @function formatUri
- * @param {string} id - id of the invite
- * @returns {string} - formatted uri
- * @description - formats the uri for the invite email
+ * @enum {function}
+ * @readonly
+ * @property {function} invite - invite uri
+ * @property {function} verify - verify uri
+ * @property {function} reset - reset uri
+ * @property {function} changeEmail - change email uri
+ * @property {function} changePassword - change password uri
  */
-export const formatUri = (id) => {
-    return `${
-        process.env.APP_URI
-    }/user/invite?invitationId=${encodeURIComponent(id)}`;
-};
+export const formatUri = Object.freeze({
+    invite: (id) => {
+        return `${
+            process.env.APP_URI
+        }/user/invite?invitationId=${encodeURIComponent(id)}`;
+    },
+    verify: (id) => {
+        return `${
+            process.env.APP_URI
+        }/user/verify?verificationId=${encodeURIComponent(id)}`;
+    },
+});
