@@ -12,6 +12,10 @@ export const schema = new Schema(
             ref: 'Organization',
             index: true,
         },
+        firebaseUid: {
+            type: String,
+            required: true,
+        },
         verified: {
             type: Boolean,
             default: false,
