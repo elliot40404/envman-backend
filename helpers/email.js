@@ -97,14 +97,25 @@ export const emailSubject = Object.freeze({
  * @property {function} changePassword - change password uri
  */
 export const formatUri = Object.freeze({
-    invite: (id) => {
-        return `${
-            process.env.APP_URI
-        }/user/invite?invitationId=${encodeURIComponent(id)}`;
+    /**
+     * @function
+     * @param {string} id - invitation id
+     * @param {string} email - email address
+     * @returns {string}
+    */
+    invite: (id, email) => {
+        return `${process.env.APP_URI}/invite?invitationId=${encodeURIComponent(
+            id
+        )}&email=${encodeURIComponent(email)}`;
     },
+    /**
+     * @function
+     * @param {string} id - verification id
+     * @returns {string}
+     */
     verify: (id) => {
         return `${
             process.env.APP_URI
-        }/user/verify?verificationId=${encodeURIComponent(id)}`;
+        }/confirm?verificationId=${encodeURIComponent(id)}`;
     },
 });
