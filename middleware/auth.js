@@ -1,6 +1,12 @@
 import 'dotenv/config';
 import { validateToken } from '../helpers/firebase.js';
 
+if (process.env.NODE_ENV === 'development') {
+    console.log('USING DEVELOPMENT TOKEN');
+} else {
+    console.log('USING FIREBASE TOKEN');
+}
+
 const auth = async (req, res, next) => {
     const Authorization = req.headers.authorization;
     if (!Authorization) {
