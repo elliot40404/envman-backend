@@ -14,3 +14,13 @@ export const validateToken = async (token) => {
     const decodedToken = await auth.verifyIdToken(token);
     return decodedToken;
 };
+
+/**
+ * @async
+ * @function deleteFirebaseUser
+ * @param {string} uid
+ * @returns {Promise<void>}
+ */
+export const deleteFirebaseUser = async (uid) => {
+    return await auth.deleteUser(uid);
+};
