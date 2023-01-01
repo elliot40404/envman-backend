@@ -5,6 +5,7 @@ import {
     formatUri,
     sendEmail,
 } from '../helpers/email.js';
+import { deleteFirebaseUser } from '../helpers/firebase.js';
 
 /**
  * @async
@@ -17,13 +18,14 @@ import {
  * @throws {Error} if inviteId is invalid
  * @throws {Error} if user already exists
  */
-export const createUser = async (data) => {
+export const createUser = async (data, reqUser) => {
     const { name, invitationId } = data;
     const invite = await Invite.findOne({
         _id: invitationId,
     });
     console.log(invite);
     if (!invite) {
+        await deleteFirebaseUser(reqUser.uid);
         throw new Error('Invalid invite id');
     }
     const user = await User.findOne({
@@ -39,6 +41,7 @@ export const createUser = async (data) => {
             orgId: invite.orgId,
             isAccountAdmin: invite.isAccountAdmin || false,
             verified: true,
+            firebaseUid: reqUser.uid,
         }),
         Invite.deleteOne({
             _id: invitationId,
@@ -133,7 +136,10 @@ export const inviteUser = async (data) => {
     await sendEmail(
         email,
         emailSubject.inviteEmail,
-        emailTemplates.inviteEmail(org.name, formatUri.invite(newInvite.id))
+        emailTemplates.inviteEmail(
+            org.name,
+            formatUri.invite(newInvite.id, email)
+        )
     );
     return {
         message: 'Invite sent',

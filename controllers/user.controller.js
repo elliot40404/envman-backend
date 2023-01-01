@@ -12,7 +12,7 @@ export async function createUser(req, res, next) {
             name: Joi.string().required().min(3).max(30),
         });
         await schema.validateAsync(req.body);
-        res.json(await userService.createUser(req.body));
+        res.json(await userService.createUser(req.body, req.user));
     } catch (err) {
         err.status = 400;
         next(err);
