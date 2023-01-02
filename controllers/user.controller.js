@@ -10,6 +10,7 @@ export async function createUser(req, res, next) {
         const schema = Joi.object({
             invitationId: Joi.string().required().length(24).alphanum(),
             name: Joi.string().required().min(3).max(30),
+            email: Joi.string().required().email(),
         });
         await schema.validateAsync(req.body);
         res.json(await userService.createUser(req.body, req.user));

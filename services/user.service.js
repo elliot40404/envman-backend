@@ -19,14 +19,17 @@ import { deleteFirebaseUser } from '../helpers/firebase.js';
  * @throws {Error} if user already exists
  */
 export const createUser = async (data, reqUser) => {
-    const { name, invitationId } = data;
+    const { name, invitationId, email } = data;
     const invite = await Invite.findOne({
         _id: invitationId,
     });
-    console.log(invite);
     if (!invite) {
         await deleteFirebaseUser(reqUser.uid);
         throw new Error('Invalid invite id');
+    }
+    if (invite.email !== email) {
+        await deleteFirebaseUser(reqUser.uid);
+        throw new Error('Email does not match');
     }
     const user = await User.findOne({
         email: invite.email,
