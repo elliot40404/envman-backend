@@ -18,7 +18,13 @@ const auth = async (req, res, next) => {
             return res.status(401).send('Unauthorized');
         }
         if (process.env.NODE_ENV === 'development') {
-            if (token !== process.env.API_TOKEN) {
+            if (token?.length > 32) {
+                const decodedToken = await validateToken(token);
+                if (!decodedToken) {
+                    return res.status(401).send('Unauthorized');
+                }
+                req.user = decodedToken;
+            } else if (token !== process.env.API_TOKEN) {
                 return res.status(401).send('Unauthorized');
             }
         } else {
