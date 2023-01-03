@@ -54,3 +54,5 @@ zip/
 logs/
 test.js
 firebase.json
+*.env
+*.env.*
