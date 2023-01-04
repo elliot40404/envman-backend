@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
     app:
@@ -16,14 +16,43 @@ services:
         volumes:
             - ./logs:/var/log
     db:
-        image: mongo
+        image: mongo:latest
         # image: mongo:6.0.0
         restart: unless-stopped
         container_name: db
+        command: ['--bind_ip_all', '--replSet', 'dbrs']
         ports:
             - 27018:27017
+        depends_on:
+            - db2
+            - db3
+        links:
+            - db2
+            - db3
         volumes:
             - onboarding-db-data:/data/db
+            - onboarding-db-configdb:/data/configdb
+            - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    db2:
+        image: mongo:latest
+        restart: unless-stopped
+        container_name: db2
+        command: ['--bind_ip_all', '--replSet', 'dbrs']
+        ports:
+            - 27019:27017
+        volumes:
+            - onboarding-db-data2:/data/db
+            - onboarding-db-configdb2:/data/configdb
+    db3:
+        image: mongo:latest
+        restart: unless-stopped
+        container_name: db3
+        command: ['--bind_ip_all', '--replSet', 'dbrs']
+        ports:
+            - 27020:27017
+        volumes:
+            - onboarding-db-data3:/data/db
+            - onboarding-db-configdb3:/data/configdb
     nginx:
         image: nginx
         restart: unless-stopped
@@ -36,3 +65,8 @@ services:
             - app
 volumes:
     envman-db-data:
+    envman-db-configdb:
+    envman-db-data2:
+    envman-db-configdb2:
+    envman-db-data3:
+    envman-db-configdb3:
